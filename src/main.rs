@@ -9,14 +9,15 @@ fn main() {
     let x = Vec3::new(1.0, 1.0, 1.0);
     println!("{:?}", x);
 
-    let mut img: RgbImage = ImageBuffer::new(1024, 512);
+    let mut img: RgbImage = ImageBuffer::new(1024, 1024);
     let bar = ProgressBar::new(1024);
 
     for x in 0..1024 {
-        for y in 0..512 {
+        for y in 0..1024 {
             let pixel = img.get_pixel_mut(x, y);
-            let color = (x / 4) as u8;
-            *pixel = image::Rgb([color, color, color]);
+            let colorx = (x / 4) as u8;
+            let colory = (y / 4) as u8;
+            *pixel = image::Rgb([colorx, colory, 63]);
         }
         bar.inc(1);
     }
