@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, Neg};
+use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Vec3 {
@@ -54,7 +54,6 @@ impl Vec3 {
             z: self.z / self.length(),
         }
     }
-
 }
 
 impl Add for Vec3 {
@@ -344,13 +343,10 @@ mod tests {
             ((3.0 * 3.0 + 4.0 * 4.0 + 5.0 * 5.0) as f64).sqrt()
         );
     }
-    
+
     #[test]
     fn test_unit() {
-        assert_eq!(
-            Vec3::new(233.0, 0.0, 0.0).unit(),
-            Vec3::new(1.0, 0.0, 0.0)
-        );
+        assert_eq!(Vec3::new(233.0, 0.0, 0.0).unit(), Vec3::new(1.0, 0.0, 0.0));
         assert_eq!(
             Vec3::new(-233.0, 0.0, 0.0).unit(),
             Vec3::new(-1.0, 0.0, 0.0)
@@ -362,5 +358,4 @@ mod tests {
     fn test_unit_panic() {
         Vec3::new(0.0, 0.0, 0.0).unit();
     }
-
 }
