@@ -28,9 +28,9 @@ impl Sphere {
         let discriminant = half_b * half_b - a * c;
 
         if discriminant < 0.0 {
-            return -1.0;
+            -1.0
         } else {
-            return (-half_b - discriminant.sqrt()) / a;
+            (-half_b - discriminant.sqrt()) / a
         }
     }
 }
