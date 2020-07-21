@@ -1,15 +1,23 @@
 mod ray;
+mod sphere;
 #[allow(clippy::float_cmp)]
 mod vec3;
 use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
 
 pub use ray::Ray;
+pub use sphere::Sphere;
 pub use vec3::Color;
 pub use vec3::Point3;
 pub use vec3::Vec3;
 
 fn ray_color(ray: &Ray) -> Color {
+    let s = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
+    let t = s.hit_sphere(&ray);
+    if t > 0.0 {
+        let n = (ray.at(t) - Vec3::new(0.0, 0.0, -1.0)).unit();
+        return Color::new(n.x + 1.0, n.y + 1.0, n.z + 1.0) * 0.5;
+    }
     let u = ray.dir.unit();
     let t = 0.5 * (u.y + 1.0);
     Color::ones() * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
@@ -20,7 +28,7 @@ fn main() {
     println!("{:?}", x);
 
     let aspect_ratio = 16.0 / 9.0;
-    let image_width = 800;
+    let image_width = 1000;
     let image_height = (image_width as f64 / aspect_ratio) as u32;
 
     let viewport_height = 2.0;
