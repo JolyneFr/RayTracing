@@ -19,7 +19,7 @@ fn main() {
     let x = Vec3::new(1.0, 1.0, 1.0);
     println!("{:?}", x);
 
-    let aspect_ratio = 1.0;
+    let aspect_ratio = 16.0 / 9.0;
     let image_width = 800;
     let image_height = (image_width as f64 / aspect_ratio) as u32;
 
@@ -49,48 +49,15 @@ fn main() {
                     -focal_length,
                 ),
             );
-            if (x - image_width / 2) * (x - image_width / 2)
-                + (y - image_height / 2) * (y - image_height / 2)
-                < (0.3125 * 0.3125 * image_width as f64 * image_width as f64) as u32
-            {
-                if (x - image_width / 2) * (x - image_width / 2)
-                    + (y - image_height / 2) * (y - image_height / 2)
-                    > (0.3 * 0.3 * image_width as f64 * image_width as f64) as u32
-                {
-                    *pixel = image::Rgb([1, 1, 1]);
-                } else {
-                    *pixel = image::Rgb([255, 255, 255]);
-                    if (x - image_width / 2) * (x - image_width / 2)
-                        + (y - image_height / 2) * (y - image_height / 2)
-                        < (0.25 * 0.25 * image_width as f64 * image_width as f64) as u32
-                        && (((x - image_width / 2) as f64) / ((y - image_height / 2) as f64) > 0.8
-                            && ((x - image_width / 2) as f64) / ((y - image_height / 2) as f64)
-                                < 0.9)
-                    {
-                        *pixel = image::Rgb([1, 1, 1]);
-                    }
-                    if (x - image_width / 2) * (x - image_width / 2)
-                        + (y - image_height / 2) * (y - image_height / 2)
-                        < (0.16 * 0.16 * image_width as f64 * image_width as f64) as u32
-                        && ((x as i32 - (image_width / 2) as i32) as f64
-                            / (y as i32 - (image_height / 2) as i32) as f64
-                            > -6.5
-                            && (x as i32 - (image_width / 2) as i32) as f64
-                                / ((y as i32 - (image_height / 2) as i32) as f64)
-                                < -4.0
-                            && x < image_width / 2)
-                    {
-                        *pixel = image::Rgb([1, 1, 1]);
-                    }
-                }
-            } else {
+            
+            
                 let cur_color = ray_color(&r);
                 //println!("{:?}", cur_color);
                 let colorx = (cur_color.x * 255.999) as u8;
                 let colory = (cur_color.y * 255.999) as u8;
                 let colorz = (cur_color.z * 255.999) as u8;
                 *pixel = image::Rgb([colorx, colory, colorz]);
-            }
+            
         }
         bar.inc(1);
     }
