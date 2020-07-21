@@ -49,15 +49,13 @@ fn main() {
                     -focal_length,
                 ),
             );
-            
-            
-                let cur_color = ray_color(&r);
-                //println!("{:?}", cur_color);
-                let colorx = (cur_color.x * 255.999) as u8;
-                let colory = (cur_color.y * 255.999) as u8;
-                let colorz = (cur_color.z * 255.999) as u8;
-                *pixel = image::Rgb([colorx, colory, colorz]);
-            
+
+            let cur_color = ray_color(&r);
+            //println!("{:?}", cur_color);
+            let colorx = (cur_color.x * 255.999) as u8;
+            let colory = (cur_color.y * 255.999) as u8;
+            let colorz = (cur_color.z * 255.999) as u8;
+            *pixel = image::Rgb([colorx, colory, colorz]);
         }
         bar.inc(1);
     }
