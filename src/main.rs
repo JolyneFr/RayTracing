@@ -1,20 +1,56 @@
-//mod hit_record;
-//mod hittable_list;
+mod camera;
 mod object;
 mod ray;
 #[allow(clippy::float_cmp)]
 mod vec3;
 use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
+use rand::Rng;
 
-pub use object::HitRecord;
-pub use object::HittableList;
-pub use object::Object;
-pub use object::Sphere;
+pub use camera::Camera;
+pub use object::{HitRecord, HittableList, Object, Sphere};
 pub use ray::Ray;
-pub use vec3::Color;
-pub use vec3::Point3;
-pub use vec3::Vec3;
+pub use vec3::{Color, Point3, Vec3};
+
+fn main() {
+    let x_to_show = Vec3::new(1.0, 1.0, 1.0);
+    println!("{:?}", x_to_show);
+
+    let aspect_ratio = 16.0 / 9.0;
+    let image_width = 1000;
+    let image_height = (image_width as f64 / aspect_ratio) as u32;
+    let samples_per_pixel = 100;
+
+    let cam = Camera::new(aspect_ratio);
+
+    let mut world = HittableList::new();
+    world.push(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
+    world.push(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
+
+    let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
+    let bar = ProgressBar::new(image_height as u64);
+
+    for y in 0..image_height {
+        for x in 0..image_width {
+            let mut cur_color = Color::zero();
+            let mut rng = rand::thread_rng();
+            for _s in 0..samples_per_pixel {
+                let randa: f64 = rng.gen();
+                let randb: f64 = rng.gen();
+                let u: f64 = (x as f64 + randa) / (image_width - 1) as f64;
+                let v: f64 = (y as f64 + randb) / (image_height - 1) as f64;
+                let r = cam.get_ray(u, v);
+                cur_color += ray_color(&r, &world);
+            }
+            cur_color *= 1.0 / (samples_per_pixel as f64);
+            write_color(cur_color, &mut img, x, image_height - y - 1);
+        }
+        bar.inc(1);
+    }
+
+    img.save("output/test.png").unwrap();
+    bar.finish();
+}
 
 fn ray_color(ray: &Ray, world: &HittableList) -> Color {
     let rec = world.ray_hit(ray, 0.0, std::f64::INFINITY);
@@ -31,55 +67,11 @@ fn ray_color(ray: &Ray, world: &HittableList) -> Color {
     }
 }
 
-fn main() {
-    let x = Vec3::new(1.0, 1.0, 1.0);
-    println!("{:?}", x);
-
-    let aspect_ratio = 16.0 / 9.0;
-    let image_width = 1000;
-    let image_height = (image_width as f64 / aspect_ratio) as u32;
-
-    let viewport_height = 2.0;
-    let viewport_width = aspect_ratio * viewport_height;
-    let focal_length = 1.0;
-
-    let mut world = HittableList::new();
-    world.push(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
-    world.push(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
-
-    //let origin = Point3::zero();
-    //let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
-    //let vertical = Vec3::new(0.0, viewport_height, 0.0);
-    let _lower_left_corner =
-        Vec3::new(-viewport_width / 2.0, -viewport_height / 2.0, -focal_length);
-
-    let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
-    let bar = ProgressBar::new(image_height as u64);
-
-    for y in 0..image_height {
-        for x in 0..image_width {
-            let pixel = img.get_pixel_mut(x, image_height - y - 1);
-            let u: f64 = x as f64 / (image_width - 1) as f64;
-            let v: f64 = y as f64 / (image_height - 1) as f64;
-            let r = Ray::new(
-                Point3::zero(),
-                Vec3::new(
-                    (u - 0.5) * viewport_width,
-                    (v - 0.5) * viewport_height,
-                    -focal_length,
-                ),
-            );
-
-            let cur_color = ray_color(&r, &world);
-            //println!("{:?}", cur_color);
-            let colorx = (cur_color.x * 255.999) as u8;
-            let colory = (cur_color.y * 255.999) as u8;
-            let colorz = (cur_color.z * 255.999) as u8;
-            *pixel = image::Rgb([colorx, colory, colorz]);
-        }
-        bar.inc(1);
-    }
-
-    img.save("output/test.png").unwrap();
-    bar.finish();
+fn write_color(color: Color, img: &mut RgbImage, x: u32, y: u32) {
+    let pixel = img.get_pixel_mut(x, y);
+    *pixel = image::Rgb([
+        (color.x * 255.0) as u8,
+        (color.y * 255.0) as u8,
+        (color.z * 255.0) as u8,
+    ]);
 }
