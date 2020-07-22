@@ -1,26 +1,34 @@
+mod hit_record;
+mod hittable_list;
+mod object;
 mod ray;
-mod sphere;
 #[allow(clippy::float_cmp)]
 mod vec3;
 use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
 
+pub use hit_record::HitRecord;
+pub use hittable_list::HittableList;
+pub use object::Object;
+pub use object::Sphere;
 pub use ray::Ray;
-pub use sphere::Sphere;
 pub use vec3::Color;
 pub use vec3::Point3;
 pub use vec3::Vec3;
 
-fn ray_color(ray: &Ray) -> Color {
-    let s = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
-    let t = s.hit_sphere(&ray);
-    if t > 0.0 {
-        let n = (ray.at(t) - Vec3::new(0.0, 0.0, -1.0)).unit();
-        return Color::new(n.x + 1.0, n.y + 1.0, n.z + 1.0) * 0.5;
+fn ray_color(ray: &Ray, world: &HittableList) -> Color {
+    let rec = world.ray_hit(ray, 0.0, std::f64::INFINITY);
+    match rec {
+        Some(cur) => {
+            let n = cur.normal;
+            Color::new(n.x + 1.0, n.y + 1.0, n.z + 1.0) * 0.5
+        }
+        None => {
+            let u = ray.dir.unit();
+            let t = 0.5 * (u.y + 1.0);
+            Color::ones() * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
+        }
     }
-    let u = ray.dir.unit();
-    let t = 0.5 * (u.y + 1.0);
-    Color::ones() * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
 }
 
 fn main() {
@@ -34,6 +42,10 @@ fn main() {
     let viewport_height = 2.0;
     let viewport_width = aspect_ratio * viewport_height;
     let focal_length = 1.0;
+
+    let mut world = HittableList::new();
+    world.push(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
+    world.push(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
 
     //let origin = Point3::zero();
     //let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
@@ -58,7 +70,7 @@ fn main() {
                 ),
             );
 
-            let cur_color = ray_color(&r);
+            let cur_color = ray_color(&r, &world);
             //println!("{:?}", cur_color);
             let colorx = (cur_color.x * 255.999) as u8;
             let colory = (cur_color.y * 255.999) as u8;
