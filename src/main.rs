@@ -1,5 +1,5 @@
-mod hit_record;
-mod hittable_list;
+//mod hit_record;
+//mod hittable_list;
 mod object;
 mod ray;
 #[allow(clippy::float_cmp)]
@@ -7,8 +7,8 @@ mod vec3;
 use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
 
-pub use hit_record::HitRecord;
-pub use hittable_list::HittableList;
+pub use object::HitRecord;
+pub use object::HittableList;
 pub use object::Object;
 pub use object::Sphere;
 pub use ray::Ray;
