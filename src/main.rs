@@ -70,8 +70,18 @@ fn ray_color(ray: &Ray, world: &HittableList) -> Color {
 fn write_color(color: Color, img: &mut RgbImage, x: u32, y: u32) {
     let pixel = img.get_pixel_mut(x, y);
     *pixel = image::Rgb([
-        (color.x * 255.0) as u8,
-        (color.y * 255.0) as u8,
-        (color.z * 255.0) as u8,
+        (within(0.0, 0.999, color.x) * 256.0) as u8,
+        (within(0.0, 0.999, color.y) * 256.0) as u8,
+        (within(0.0, 0.999, color.z) * 256.0) as u8,
     ]);
+}
+
+fn within(min: f64, max: f64, value: f64) -> f64 {
+    if value > max {
+        return max;
+    }
+    if value < min {
+        return min;
+    }
+    value
 }
