@@ -57,26 +57,18 @@ impl Vec3 {
     }
 
     pub fn random_unit() -> Self {
-        let mut rng = rand::thread_rng();
-        let randa: f64 = rng.gen();
-        let randb: f64 = rng.gen();
-        let randc: f64 = rng.gen();
         Self {
-            x: randa,
-            y: randb,
-            z: randc,
+            x: rand::thread_rng().gen(),
+            y: rand::thread_rng().gen(),
+            z: rand::thread_rng().gen(),
         }
     }
 
     pub fn random(min: f64, max: f64) -> Self {
-        let mut rng = rand::thread_rng();
-        let randa: f64 = rng.gen_range(min, max);
-        let randb: f64 = rng.gen_range(min, max);
-        let randc: f64 = rng.gen_range(min, max);
         Self {
-            x: randa,
-            y: randb,
-            z: randc,
+            x: rand::thread_rng().gen_range(min, max),
+            y: rand::thread_rng().gen_range(min, max),
+            z: rand::thread_rng().gen_range(min, max),
         }
     }
 }
@@ -224,6 +216,46 @@ impl Neg for Vec3 {
             z: -self.z,
         }
     }
+}
+
+pub fn random_in_unit_sphere() -> Vec3 {
+    loop {
+        let temp = Vec3::random(-1.0, 1.0);
+        if temp.squared_length() >= 1.0 {
+            continue;
+        }
+        return temp;
+    }
+}
+
+pub fn random_unit_vector() -> Vec3 {
+    let mut rng = rand::thread_rng();
+    let a: f64 = rng.gen_range(0.0, 2.0 * std::f64::consts::PI);
+    let z: f64 = rng.gen_range(-1.0, 1.0);
+    let r: f64 = (1.0 - z * z).sqrt();
+    Vec3::new(r * a.cos(), r * a.sin(), z)
+}
+
+/*
+pub fn random_in_hemisphere(normal: &Vec3) -> Vec3 {
+    let in_unit_sphere = random_in_unit_sphere();
+    if in_unit_sphere * *normal > 0.0 {
+        return in_unit_sphere;
+    } else {
+        return -in_unit_sphere
+    }
+}
+*/
+
+pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
+    *v - *n * (*v * *n) * 2.0
+}
+
+pub fn refract(uv: &Vec3, n: &Vec3, etai_over_etat: f64) -> Vec3 {
+    let cos_theta = -*uv * *n;
+    let r_out_prep = (*uv + *n * cos_theta) * etai_over_etat;
+    let r_out_parallel = -(*n * (1.0 - r_out_prep.squared_length()).abs().sqrt());
+    r_out_prep + r_out_parallel
 }
 
 #[cfg(test)]
