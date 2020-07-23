@@ -20,6 +20,7 @@ fn main() {
     let image_width = 1000;
     let image_height = (image_width as f64 / aspect_ratio) as u32;
     let samples_per_pixel = 100;
+    let max_depth = 50;
 
     let cam = Camera::new(aspect_ratio);
 
@@ -40,7 +41,7 @@ fn main() {
                 let u: f64 = (x as f64 + randa) / (image_width - 1) as f64;
                 let v: f64 = (y as f64 + randb) / (image_height - 1) as f64;
                 let r = cam.get_ray(u, v);
-                cur_color += ray_color(&r, &world);
+                cur_color += ray_color(&r, &world, max_depth);
             }
             cur_color *= 1.0 / (samples_per_pixel as f64);
             write_color(cur_color, &mut img, x, image_height - y - 1);
@@ -52,12 +53,18 @@ fn main() {
     bar.finish();
 }
 
-fn ray_color(ray: &Ray, world: &HittableList) -> Color {
-    let rec = world.ray_hit(ray, 0.0, std::f64::INFINITY);
+fn ray_color(ray: &Ray, world: &HittableList, depth: i32) -> Color {
+    let rec = world.ray_hit(ray, 0.001, std::f64::INFINITY);
+
+    if depth <= 0 {
+        return Color::zero();
+    }
+
     match rec {
         Some(cur) => {
-            let n = cur.normal;
-            Color::new(n.x + 1.0, n.y + 1.0, n.z + 1.0) * 0.5
+            let target = cur.p + cur.normal + random_unit_vector();
+            let diffuse_ray = Ray::new(cur.p, target - cur.p);
+            ray_color(&diffuse_ray, world, depth - 1) * 0.5
         }
         None => {
             let u = ray.dir.unit();
@@ -69,10 +76,13 @@ fn ray_color(ray: &Ray, world: &HittableList) -> Color {
 
 fn write_color(color: Color, img: &mut RgbImage, x: u32, y: u32) {
     let pixel = img.get_pixel_mut(x, y);
+    let colorx = color.x.sqrt();
+    let colory = color.y.sqrt();
+    let colorz = color.z.sqrt();
     *pixel = image::Rgb([
-        (within(0.0, 0.999, color.x) * 256.0) as u8,
-        (within(0.0, 0.999, color.y) * 256.0) as u8,
-        (within(0.0, 0.999, color.z) * 256.0) as u8,
+        (within(0.0, 0.999, colorx) * 256.0) as u8,
+        (within(0.0, 0.999, colory) * 256.0) as u8,
+        (within(0.0, 0.999, colorz) * 256.0) as u8,
     ]);
 }
 
@@ -85,3 +95,34 @@ fn within(min: f64, max: f64, value: f64) -> f64 {
     }
     value
 }
+
+/*
+fn random_in_unit_sphere() -> Vec3 {
+    loop {
+        let temp = Vec3::random(-1.0, 1.0);
+        if temp.squared_length() >= 1.0 {
+            continue;
+        }
+        return temp;
+    }
+}
+*/
+
+fn random_unit_vector() -> Vec3 {
+    let mut rng = rand::thread_rng();
+    let a: f64 = rng.gen_range(0.0, 2.0 * std::f64::consts::PI);
+    let z: f64 = rng.gen_range(-1.0, 1.0);
+    let r: f64 = (1.0 - z * z).sqrt();
+    Vec3::new(r * a.cos(), r * a.sin(), z)
+}
+
+/*
+fn random_in_hemisphere(normal: &Vec3) -> Vec3 {
+    let in_unit_sphere = random_in_unit_sphere();
+    if in_unit_sphere * *normal > 0.0 {
+        return in_unit_sphere;
+    } else {
+        return -in_unit_sphere
+    }
+}
+*/

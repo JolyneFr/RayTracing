@@ -1,3 +1,4 @@
+use rand::Rng;
 use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -52,6 +53,30 @@ impl Vec3 {
             x: self.x / self.length(),
             y: self.y / self.length(),
             z: self.z / self.length(),
+        }
+    }
+
+    pub fn random_unit() -> Self {
+        let mut rng = rand::thread_rng();
+        let randa: f64 = rng.gen();
+        let randb: f64 = rng.gen();
+        let randc: f64 = rng.gen();
+        Self {
+            x: randa,
+            y: randb,
+            z: randc,
+        }
+    }
+
+    pub fn random(min: f64, max: f64) -> Self {
+        let mut rng = rand::thread_rng();
+        let randa: f64 = rng.gen_range(min, max);
+        let randb: f64 = rng.gen_range(min, max);
+        let randc: f64 = rng.gen_range(min, max);
+        Self {
+            x: randa,
+            y: randb,
+            z: randc,
         }
     }
 }
