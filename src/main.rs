@@ -1,6 +1,7 @@
 mod camera;
 mod object;
 mod ray;
+mod texture;
 #[allow(clippy::float_cmp)]
 mod vec3;
 use image::{ImageBuffer, RgbImage};
@@ -9,10 +10,9 @@ use rand::Rng;
 pub use std::{sync, vec};
 
 pub use camera::Camera;
-pub use object::{
-    Dielectric, HitRecord, HittableList, Lambertian, Material, Metal, Object, Sphere,
-};
+pub use object::*;
 pub use ray::Ray;
+pub use texture::*;
 pub use vec3::{Color, Point3, Vec3};
 
 fn main() {
@@ -22,7 +22,7 @@ fn main() {
     let aspect_ratio = 3.0 / 2.0;
     let image_width = 1200;
     let image_height = (image_width as f64 / aspect_ratio) as u32;
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 64;
     let max_depth = 50;
     let look_from = Point3::new(13.0, 2.0, 3.0);
     let look_at = Point3::new(0.0, 0.0, 0.0);
@@ -125,11 +125,14 @@ fn random_double_in(min: f64, max: f64) -> f64 {
 fn random_scene() -> HittableList {
     let mut world = HittableList::new();
 
-    let ground_material = sync::Arc::new(Lambertian::new(&Color::new(0.5, 0.5, 0.5)));
+    let checker_texture = sync::Arc::new(CheckerTexture::new(
+        &Color::new(0.2, 0.3, 0.1),
+        &Color::new(0.9, 0.9, 0.9),
+    ));
     world.push(Box::new(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
-        ground_material,
+        sync::Arc::new(Lambertian::new_arc(checker_texture)),
     )));
 
     for a in -11..11 {
@@ -142,12 +145,12 @@ fn random_scene() -> HittableList {
             );
 
             if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                if choose_mat < 0.8 {
+                if choose_mat < 0.65 {
                     //diffuse
                     let albedo = Vec3::elemul(Color::random_unit(), Color::random_unit());
                     let sphere_material = sync::Arc::new(Lambertian::new(&albedo));
                     world.push(Box::new(Sphere::new(center, 0.2, sphere_material)));
-                } else if choose_mat < 0.95 {
+                } else if choose_mat < 0.9 {
                     //metal
                     let albedo = Color::random(0.5, 1.0);
                     let fuzz = random_double_in(0.0, 0.5);
