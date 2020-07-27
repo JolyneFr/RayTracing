@@ -1,3 +1,5 @@
+mod aabb;
+mod bvh;
 mod camera;
 mod object;
 mod ray;
@@ -40,7 +42,8 @@ fn main() {
         dist_to_focus,
     );
 
-    let world = random_scene();
+    let world_sence = random_scene();
+    let world = bvh::BvhNode::new_boxed(world_sence, 0.0, 0.001);
 
     let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
     let bar = ProgressBar::new(image_height as u64);
@@ -55,7 +58,7 @@ fn main() {
                 let u: f64 = (x as f64 + randa) / (image_width - 1) as f64;
                 let v: f64 = (y as f64 + randb) / (image_height - 1) as f64;
                 let r = cam.get_ray(u, v);
-                cur_color += ray_color(&r, &world, max_depth);
+                cur_color += ray_color(&r, &*world, max_depth);
             }
             cur_color *= 1.0 / (samples_per_pixel as f64);
             write_color(cur_color, &mut img, x, image_height - y - 1);
@@ -67,8 +70,8 @@ fn main() {
     bar.finish();
 }
 
-fn ray_color(ray: &Ray, world: &HittableList, depth: i32) -> Color {
-    let rec = world.ray_hit(ray, 0.001, std::f64::INFINITY);
+fn ray_color(ray: &Ray, world: &dyn Object, depth: i32) -> Color {
+    let rec = world.hit(ray, 0.001, std::f64::INFINITY);
 
     if depth <= 0 {
         return Color::zero();

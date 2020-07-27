@@ -1,3 +1,4 @@
+pub use crate::aabb::*;
 pub use crate::ray::Ray;
 pub use crate::texture::*;
 pub use crate::vec3::{Color, Point3, Vec3};
@@ -6,6 +7,7 @@ pub use std::{sync, vec};
 
 pub trait Object {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
+    fn bounding_box(&self, t0: f64, t1: f64) -> Option<AABB>;
 }
 
 #[derive(Clone)]
@@ -61,6 +63,14 @@ impl Object for Sphere {
             }
         }
         Option::None
+    }
+
+    fn bounding_box(&self, _t0: f64, _t1: f64) -> Option<AABB> {
+        let output_box = AABB::new(
+            self.center - Vec3::ones() * self.radius,
+            self.center + Vec3::ones() * self.radius,
+        );
+        Some(output_box)
     }
 }
 
@@ -139,8 +149,10 @@ impl HittableList {
     pub fn push(&mut self, ob: Box<dyn Object>) {
         self.objects.push(ob);
     }
+}
 
-    pub fn ray_hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
+impl Object for HittableList {
+    fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let mut closest_so_far = t_max;
         let mut cur_rec = Option::<HitRecord>::None;
 
@@ -153,6 +165,33 @@ impl HittableList {
         }
 
         cur_rec
+    }
+
+    fn bounding_box(&self, t0: f64, t1: f64) -> Option<AABB> {
+        if self.objects.is_empty() {
+            return None;
+        }
+
+        let mut output_box = AABB::new(Point3::zero(), Point3::zero());
+        let mut first_box = true;
+
+        for object in &self.objects {
+            let res = object.bounding_box(t0, t1);
+            match res {
+                Some(temp_box) => {
+                    output_box = if first_box {
+                        temp_box
+                    } else {
+                        surrounding_box(output_box, temp_box)
+                    };
+                    first_box = false;
+                }
+                None => {
+                    return None;
+                }
+            }
+        }
+        Some(output_box)
     }
 }
 
