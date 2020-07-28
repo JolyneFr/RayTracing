@@ -2,6 +2,7 @@ pub use crate::ray::Ray;
 pub use crate::vec3::Point3;
 pub use crate::vec3::Vec3;
 
+#[derive(Copy, Clone)]
 pub struct Camera {
     pub origin: Point3,
     pub _lower_left_corner: Point3,

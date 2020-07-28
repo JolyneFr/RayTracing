@@ -53,4 +53,8 @@ impl Object for XYrect {
         );
         Some(output_box)
     }
+
+    fn get_background(&self, _t: f64) -> Color {
+        Color::zero()
+    }
 }

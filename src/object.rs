@@ -5,9 +5,10 @@ pub use crate::vec3::{Color, Point3, Vec3};
 use rand::Rng;
 pub use std::{sync::Arc, vec};
 
-pub trait Object {
+pub trait Object: Send + Sync {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
     fn bounding_box(&self, t0: f64, t1: f64) -> Option<AABB>;
+    fn get_background(&self, t: f64) -> Color;
 }
 
 #[derive(Clone)]
@@ -72,6 +73,10 @@ impl Object for Sphere {
         );
         Some(output_box)
     }
+
+    fn get_background(&self, _t: f64) -> Color {
+        Color::zero()
+    }
 }
 
 fn get_sphere_uv(p: &Vec3) -> (f64, f64) {
@@ -129,24 +134,27 @@ impl HitRecord {
     }
 }
 
+#[derive(Clone)]
 pub struct HittableList {
-    pub objects: Vec<Box<dyn Object>>,
+    pub objects: Vec<Arc<dyn Object>>,
+    pub if_dark: bool,
 }
 
 impl Default for HittableList {
     fn default() -> Self {
-        Self::new()
+        Self::new(true)
     }
 }
 
 impl HittableList {
-    pub fn new() -> Self {
+    pub fn new(if_dark: bool) -> Self {
         Self {
             objects: vec::Vec::new(),
+            if_dark,
         }
     }
 
-    pub fn push(&mut self, ob: Box<dyn Object>) {
+    pub fn push(&mut self, ob: Arc<dyn Object>) {
         self.objects.push(ob);
     }
 }
@@ -193,9 +201,17 @@ impl Object for HittableList {
         }
         Some(output_box)
     }
+
+    fn get_background(&self, t: f64) -> Color {
+        if self.if_dark {
+            Color::zero()
+        } else {
+            Color::ones() * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
+        }
+    }
 }
 
-pub trait Material {
+pub trait Material: Send + Sync {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>;
     fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color;
 }

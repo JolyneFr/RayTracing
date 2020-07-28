@@ -4,17 +4,23 @@ pub use rand::Rng;
 pub use std::{cmp::Ordering, sync::Arc};
 
 pub struct BvhNode {
-    left: Box<dyn Object>,
-    right: Box<dyn Object>,
+    left: Arc<dyn Object>,
+    right: Arc<dyn Object>,
     cur_box: AABB,
+    if_dark: bool,
 }
 
 impl BvhNode {
-    pub fn new_boxed(list: HittableList, time0: f64, time1: f64) -> Box<dyn Object> {
-        BvhNode::init(list.objects, time0, time1)
+    pub fn new_boxed(list: HittableList, time0: f64, time1: f64) -> Arc<dyn Object> {
+        BvhNode::init(list.objects, time0, time1, list.if_dark)
     }
 
-    pub fn init(mut objects: Vec<Box<dyn Object>>, time0: f64, time1: f64) -> Box<dyn Object> {
+    pub fn init(
+        mut objects: Vec<Arc<dyn Object>>,
+        time0: f64,
+        time1: f64,
+        if_dark: bool,
+    ) -> Arc<dyn Object> {
         let axis = rand::thread_rng().gen_range(0, 3);
 
         match objects.len() {
@@ -29,16 +35,17 @@ impl BvhNode {
 
                 let mut left_objects = objects;
                 let right_objects = left_objects.split_off(left_objects.len() / 2);
-                let left = Self::init(left_objects, time0, time1);
-                let right = Self::init(right_objects, time0, time1);
+                let left = Self::init(left_objects, time0, time1, if_dark);
+                let right = Self::init(right_objects, time0, time1, if_dark);
                 let cur_box = surrounding_box(
                     left.bounding_box(time0, time1).unwrap(),
                     right.bounding_box(time0, time1).unwrap(),
                 );
-                Box::new(Self {
+                Arc::new(Self {
                     left,
                     right,
                     cur_box,
+                    if_dark,
                 })
             }
         }
@@ -70,5 +77,13 @@ impl Object for BvhNode {
 
     fn bounding_box(&self, _t0: f64, _t1: f64) -> Option<AABB> {
         Some(self.cur_box)
+    }
+
+    fn get_background(&self, t: f64) -> Color {
+        if self.if_dark {
+            Color::zero()
+        } else {
+            Color::ones() * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
+        }
     }
 }
