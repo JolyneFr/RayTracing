@@ -3,7 +3,7 @@ pub use crate::ray::Ray;
 pub use crate::texture::*;
 pub use crate::vec3::{Color, Point3, Vec3};
 use rand::Rng;
-pub use std::{sync, vec};
+pub use std::{sync::Arc, vec};
 
 pub trait Object {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord>;
@@ -14,11 +14,11 @@ pub trait Object {
 pub struct Sphere {
     pub center: Point3,
     pub radius: f64,
-    pub mat_ptr: sync::Arc<dyn Material>,
+    pub mat_ptr: Arc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(c: Point3, r: f64, m: sync::Arc<dyn Material>) -> Self {
+    pub fn new(c: Point3, r: f64, m: Arc<dyn Material>) -> Self {
         Self {
             center: Point3 {
                 x: c.x,
@@ -86,7 +86,7 @@ fn get_sphere_uv(p: &Vec3) -> (f64, f64) {
 pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
-    pub mat_ptr: sync::Arc<dyn Material>,
+    pub mat_ptr: Arc<dyn Material>,
     pub t: f64,
     pub u: f64,
     pub v: f64,
@@ -94,7 +94,7 @@ pub struct HitRecord {
 }
 
 impl HitRecord {
-    pub fn new(point: Point3, n: Vec3, tin: f64, m: sync::Arc<dyn Material>) -> Self {
+    pub fn new(point: Point3, n: Vec3, tin: f64, m: Arc<dyn Material>) -> Self {
         Self {
             p: Point3 {
                 x: point.x,
@@ -197,21 +197,22 @@ impl Object for HittableList {
 
 pub trait Material {
     fn scatter(&self, r_in: &Ray, rec: &HitRecord) -> Option<(Color, Ray)>;
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color;
 }
 
 pub struct Lambertian {
-    pub albedo: sync::Arc<dyn Texture>,
+    pub albedo: Arc<dyn Texture>,
 }
 
 impl Lambertian {
     pub fn new(a: &Color) -> Self {
         let tex = SolidColor::new(a);
         Self {
-            albedo: sync::Arc::new(tex),
+            albedo: Arc::new(tex),
         }
     }
 
-    pub fn new_arc(a: sync::Arc<dyn Texture>) -> Self {
+    pub fn new_arc(a: Arc<dyn Texture>) -> Self {
         Self { albedo: a }
     }
 }
@@ -222,6 +223,10 @@ impl Material for Lambertian {
         let scattered = Ray::new(rec.p, scatter_direction);
         let attenuation = self.albedo.value(rec.u, rec.v, &rec.p);
         Some((attenuation, scattered))
+    }
+
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color::zero()
     }
 }
 
@@ -256,6 +261,10 @@ impl Material for Metal {
         } else {
             None
         }
+    }
+
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color::zero()
     }
 }
 
@@ -304,5 +313,35 @@ impl Material for Dielectric {
         let refracted = crate::vec3::refract(&unit_direction, &rec.normal, etai_over_etat);
         let scattered = Ray::new(rec.p, refracted);
         Some((attenuation, scattered))
+    }
+
+    fn emitted(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color::zero()
+    }
+}
+
+pub struct DiffuseLight {
+    emit: Arc<dyn Texture>,
+}
+
+impl DiffuseLight {
+    pub fn new(a: Arc<dyn Texture>) -> Self {
+        Self { emit: a }
+    }
+
+    pub fn new_color(c: &Color) -> Self {
+        Self {
+            emit: Arc::new(SolidColor::new(c)),
+        }
+    }
+}
+
+impl Material for DiffuseLight {
+    fn scatter(&self, _r_in: &Ray, _rec: &HitRecord) -> Option<(Color, Ray)> {
+        None
+    }
+
+    fn emitted(&self, u: f64, v: f64, p: &Point3) -> Color {
+        self.emit.value(u, v, p)
     }
 }
