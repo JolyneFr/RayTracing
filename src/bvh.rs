@@ -24,7 +24,7 @@ impl BvhNode {
         let axis = rand::thread_rng().gen_range(0, 3);
 
         match objects.len() {
-            0 => panic!("length mismatch"),
+            0 => panic!(),
             1 => objects.remove(0),
             _ => {
                 objects.sort_by(|a, b| {
