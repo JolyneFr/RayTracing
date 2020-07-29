@@ -15,7 +15,7 @@ pub fn init_sence(index: u32) -> (Arc<dyn Object>, Camera) {
             let look_at = Point3::new(0.0, 0.0, 0.0);
             let vup = Vec3::new(0.0, 1.0, 0.0);
             let vfov = 20.0;
-            let aspect_ratio = 3.0 / 2.0;
+            let aspect_ratio = 16.0 / 9.0;
             let dist_to_focus = 10.0;
             let aperture = 0.1;
             let cam = Camera::new(
@@ -37,10 +37,10 @@ pub fn init_sence(index: u32) -> (Arc<dyn Object>, Camera) {
             let look_from = Point3::new(9.0, 4.0, 4.0);
             let look_at = Point3::new(2.5, 1.0, 1.0);
             let vup = Vec3::new(0.0, 1.0, 0.0);
-            let vfov = 20.0;
+            let vfov = 27.0;
             let dist_to_focus = 10.0;
-            let aperture = 0.01;
-            let aspect_ratio = 3.0 / 2.0;
+            let aperture = 0.06;
+            let aspect_ratio = 16.0 / 9.0;
             let cam = Camera::new(
                 look_from,
                 look_at,
@@ -143,7 +143,9 @@ fn light_world() -> HittableList {
     let albedo2 = albedo1 * 1.4;
     let checker_texture2 = Arc::new(CheckerTexture::new(&albedo1, &albedo2));
     let tex = Arc::new(DiffuseLight::new(checker_texture2));
-    world.push(Arc::new(Sphere::new(center, 0.6, tex)));
+    let glass_material = Arc::new(Dielectric::new(1.5));
+    world.push(Arc::new(Sphere::new(center, 0.6, glass_material)));
+    world.push(Arc::new(Sphere::new(center, 0.4, tex)));
     sphere_pos.push((center, 0.6));
 
     for a in -11..11 {
@@ -177,17 +179,17 @@ fn light_world() -> HittableList {
                 continue;
             }
 
-            if choose_mat < 0.3 {
+            if choose_mat < 0.25 {
                 //light
                 let albedo = Vec3::elemul(Color::random_unit(), Color::random_unit()) * 4.0;
                 let difflight = Arc::new(DiffuseLight::new_color(&albedo));
                 world.push(Arc::new(Sphere::new(center, radius, difflight)));
-            } else if choose_mat < 0.65 {
+            } else if choose_mat < 0.5 {
                 //diffuse
                 let albedo = Vec3::elemul(Color::random_unit(), Color::random_unit());
                 let sphere_material = Arc::new(Lambertian::new(&albedo));
                 world.push(Arc::new(Sphere::new(center, radius, sphere_material)));
-            } else if choose_mat < 0.9 {
+            } else if choose_mat < 0.75 {
                 //metal
                 let albedo = Color::random(0.5, 1.0);
                 let fuzz = random_double_in(0.0, 0.5);
@@ -197,6 +199,11 @@ fn light_world() -> HittableList {
                 //glass
                 let sphere_material = Arc::new(Dielectric::new(1.5));
                 world.push(Arc::new(Sphere::new(center, radius, sphere_material)));
+                if choose_mat < 0.85 {
+                    let albedo_extra = Vec3::elemul(Color::random_unit(), Color::random_unit());
+                    let sphere_material = Arc::new(Lambertian::new(&albedo_extra));
+                    world.push(Arc::new(Sphere::new(center, radius * 0.9, sphere_material)));
+                }
             }
         }
     }
